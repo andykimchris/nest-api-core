@@ -1,24 +1,96 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import { describe } from 'node:test';
+import * as pactum from 'pactum';
+import { AuthDto } from 'src/auth/dto';
+import { DbPrismaService } from '../src/db-prisma/db-prisma.service';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let prisma: DbPrismaService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
+    await app.listen(3333);
+
+    prisma = app.get(DbPrismaService);
+    await prisma.cleanDatabase();
+
+    pactum.request.setBaseUrl('http://localhost:3333');
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
+  });
+
+  describe('Auth', () => {
+    const dto: AuthDto = {
+      email: 'abcad@gmail.com',
+      password: '2134wer',
+    };
+    describe('Register', () => {
+      it('should check password is non empty', () => {
+        const dtoWithoutPassword = {
+          email: 'abca@gmail.com',
+        };
+        return pactum
+          .spec()
+          .post('/auth/register')
+          .withBody(dtoWithoutPassword)
+          .expectStatus(400);
+      });
+
+      it('should register a user', () => {
+        return pactum
+          .spec()
+          .post('/auth/register')
+          .withBody(dto)
+          .expectStatus(201);
+      });
+    });
+    describe('Login', () => {
+      it('should login a user', () => {
+        return pactum
+          .spec()
+          .post('/auth/login')
+          .withBody(dto)
+          .expectStatus(200)
+          .stores('user_access_token', 'access_token');
+      });
+    });
+  });
+
+  describe('User', () => {
+    describe('Get', () => {
+      it('should return a user', () => {
+        return pactum
+          .spec()
+          .get('/users/')
+          .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+          .expectStatus(200);
+      });
+    });
+
+    describe('Patch', () => {
+      const dto = {
+        firstName: 'Andrew',
+        lastName: 'Kim',
+      };
+      it('should update a user', () => {
+        return pactum
+          .spec()
+          .patch('/users/1')
+          .withBody(dto)
+          .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+          .expectStatus(200);
+      });
+    });
   });
 });
