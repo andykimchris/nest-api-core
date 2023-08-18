@@ -9,7 +9,11 @@
     "prisma:dev:deploy": "prisma migrate deploy",
     "db:dev:rm": "docker-compose rm -s -f -v dev-db",
     "db:dev:up": "docker-compose up -d dev-db",
-    "db:dev:restart": "pnpm run db:dev:rm && pnpm run db:dev:up && sleep 1 && pnpm run prisma:dev:deploy",
+    "db:dev:restart": "pnpm run db:dev:rm && pnpm run db:dev:up && sleep 0.3 && pnpm run prisma:dev:deploy",
+    "prisma:test:deploy": "dotenv -e .env.test -- prisma migrate deploy",
+    "db:test:rm": "docker-compose rm -s -f -v test-db",
+    "db:test:up": "docker-compose up -d test-db",
+    "db:test:restart": "pnpm run db:test:rm && pnpm run db:test:up && sleep 0.3 && pnpm run prisma:test:deploy",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
@@ -18,10 +22,10 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
-    "test:watch": "jest --watch",
+    "test:watch": "dotenv -e .env.test -- jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "pnpm run db:test:restart && dotenv -e .env.test -- jest --watch --no-cache --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -34,6 +38,7 @@
     "argon2": "^0.31.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
+    "pactum": "^3.5.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
