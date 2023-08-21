@@ -6,11 +6,13 @@ import { DbPrismaService } from '../db-prisma/db-prisma.service';
 export class UserService {
   constructor(private dbPrisma: DbPrismaService) {}
 
-  async updateUser(userId: string, userDto: EditUserDto) {
+  async editUser(userId: number, dto: EditUserDto) {
     const user = await this.dbPrisma.user.update({
-      where: { id: parseInt(userId) },
+      where: {
+        id: userId,
+      },
       data: {
-        ...userDto,
+        ...dto,
       },
     });
 
