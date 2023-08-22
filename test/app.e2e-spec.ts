@@ -3,7 +3,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { describe } from 'node:test';
 import * as pactum from 'pactum';
 import { AuthDto } from 'src/auth/dto';
+import { EditBookmarkDTO } from 'src/bookmark/dto';
 import { DbPrismaService } from '../src/db-prisma/db-prisma.service';
+import { EditUserDto } from '../src/user/dto';
 import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
@@ -69,7 +71,7 @@ describe('AppController (e2e)', () => {
 
   describe('User', () => {
     describe('Get', () => {
-      it('should return a user', () => {
+      it('should get a user', () => {
         return pactum
           .spec()
           .get('/users/')
@@ -79,17 +81,19 @@ describe('AppController (e2e)', () => {
     });
 
     describe('Patch', () => {
-      const dto = {
-        firstName: 'Andrew',
-        lastName: 'Kim',
-      };
       it('should update a user', () => {
+        const dto: EditUserDto = {
+          firstName: 'Andrew',
+          lastName: 'Kim',
+        };
         return pactum
           .spec()
-          .patch('/users/1')
-          .withBody(dto)
+          .patch('/users/')
           .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
-          .expectStatus(200);
+          .withBody(dto)
+          .expectStatus(200)
+          .expectBodyContains(dto.firstName)
+          .expectBodyContains(dto.lastName);
       });
     });
   });
