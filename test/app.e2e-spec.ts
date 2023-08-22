@@ -96,5 +96,84 @@ describe('AppController (e2e)', () => {
           .expectBodyContains(dto.lastName);
       });
     });
+
+    describe('Bookmark', () => {
+      describe('Post', () => {
+        const dto = {
+          title: 'Day at the beach',
+          link: 'https://example.com',
+        };
+        it('should create a bookmark', () => {
+          return pactum
+            .spec()
+            .post('/bookmarks/')
+            .withBody(dto)
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(201)
+            .stores('bookmarkId', 'id');
+        });
+      });
+
+      describe('Get', () => {
+        it('should get total bookmarks', () => {
+          return pactum
+            .spec()
+            .get('/bookmarks/')
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(200);
+        });
+      });
+
+      describe('Get: ID', () => {
+        it('should get a bookmark', () => {
+          return pactum
+            .spec()
+            .get('/bookmarks/{id}')
+            .withPathParams('id', '$S{bookmarkId}')
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(200);
+        });
+      });
+
+      describe('Patch', () => {
+        const dto: EditBookmarkDTO = {
+          title:
+            'Kubernetes Course - Full Beginners Tutorial (Containerize Your Apps!)',
+          description: 'Learn how to use Kubernetes in this complete course.',
+          link: 'test',
+        };
+        it('should edit a bookmark', () => {
+          return pactum
+            .spec()
+            .patch('/bookmarks/{id}')
+            .withPathParams('id', '$S{bookmarkId}')
+            .withBody(dto)
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(200)
+            .expectBodyContains(dto.title)
+            .expectBodyContains(dto.description);
+        });
+      });
+
+      describe('Delete', () => {
+        it('should delete a bookmark', () => {
+          return pactum
+            .spec()
+            .delete('/bookmarks/{id}')
+            .withPathParams('id', '$S{bookmarkId}')
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(204);
+        });
+
+        it('should get empty bookmarks', () => {
+          return pactum
+            .spec()
+            .get('/bookmarks')
+            .withHeaders({ Authorization: 'Bearer $S{user_access_token}' })
+            .expectStatus(200)
+            .expectJsonLength(0);
+        });
+      });
+    });
   });
 });
